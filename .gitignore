@@ -118,3 +118,8 @@ mmseg/.mim
 
 # Pytorch
 *.pth
+
+exp/test
+exp/thirdparty
+projects/
+dinov2
