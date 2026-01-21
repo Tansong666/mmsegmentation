@@ -122,4 +122,5 @@ mmseg/.mim
 exp/test
 exp/thirdparty
 projects/
-dinov2
+# dinov2
+# dinov3

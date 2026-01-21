@@ -24,6 +24,15 @@ def parse_args():
         default=2,
         help='the interval of show (s)')
     parser.add_argument(
+        '--draw-gt',
+        default=True,
+        help='Whether to draw GT SegDataSample. Default to True.')
+    parser.add_argument(
+        '--alpha',
+        type=float,
+        default=0.25,
+        help='The transparency of segmentation mask. Defaults to 0.8')
+    parser.add_argument(
         '--cfg-options',
         nargs='+',
         action=DictAction,
@@ -49,11 +58,14 @@ def main():
     dataset = DATASETS.build(cfg.train_dataloader.dataset)
     visualizer = VISUALIZERS.build(cfg.visualizer)
     visualizer.dataset_meta = dataset.metainfo
+    visualizer.alpha = args.alpha
 
     progress_bar = ProgressBar(len(dataset))
     for item in dataset:
         img = item['inputs'].permute(1, 2, 0).numpy()
         img = img[..., [2, 1, 0]]  # bgr to rgb
+        import numpy as np
+        img = np.ascontiguousarray(img)
         data_sample = item['data_samples'].numpy()
         img_path = osp.basename(item['data_samples'].img_path)
 
@@ -61,15 +73,20 @@ def main():
             args.output_dir,
             osp.basename(img_path)) if args.output_dir is not None else None
 
-        visualizer.add_datasample(
-            name=osp.basename(img_path),
-            image=img,
-            data_sample=data_sample,
-            draw_gt=True,
-            draw_pred=False,
-            wait_time=args.show_interval,
-            out_file=out_file,
-            show=not args.not_show)
+        if not args.draw_gt and args.output_dir is not None:
+             import mmcv
+             # Save original image directly
+             mmcv.imwrite(img[..., [2, 1, 0]], out_file)  # RGB to BGR for saving
+        else:
+             visualizer.add_datasample(
+                name=osp.basename(img_path),
+                image=img,
+                data_sample=data_sample,
+                draw_gt=args.draw_gt,
+                draw_pred=False,
+                wait_time=args.show_interval,
+                out_file=out_file,
+                show=not args.not_show)
         progress_bar.update()
 
 
